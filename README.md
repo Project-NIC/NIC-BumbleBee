@@ -90,8 +90,8 @@ regulate output.
 
 | Document | Description |
 |---|---|
-| [DESIGN-FPLG.cs.md](DESIGN-FPLG.cs.md) | Full technical concept — 20 chapters (Czech) |
-| [OPEN-QUESTIONS.cs.md](OPEN-QUESTIONS.cs.md) | What we don't know — simulation and test tasks |
+| [DESIGN-FPLG.md](DESIGN-FPLG.md) | Full technical concept — 20 chapters  |
+| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | What we don't know — simulation and test tasks |
 | [SCHEMA-FPLG.svg](SCHEMA-FPLG.svg) | Schematic cross-section (placeholder) |
 | `calc/` | (planned) numerical models — resonance, cycle |
 
