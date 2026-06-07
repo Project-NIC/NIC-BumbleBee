@@ -91,8 +91,8 @@ NIC-FPLG — открытая концепция двухтактного дву
 
 | Документ | Описание |
 |---|---|
-| [DESIGN-FPLG.cs.md](DESIGN-FPLG.cs.md) | Полное техническое описание — 20 глав (на чешском) |
-| [OPEN-QUESTIONS.cs.md](OPEN-QUESTIONS.cs.md) | Что неизвестно — задачи для симуляций и испытаний |
+| [DESIGN-FPLG.ru.md](DESIGN-FPLG.ru.md) | Полное техническое описание — 20 глав (на чешском) |
+| [OPEN-QUESTIONS.ru.md](OPEN-QUESTIONS.ru.md) | Что неизвестно — задачи для симуляций и испытаний |
 | [SCHEMA-FPLG.svg](SCHEMA-FPLG.svg) | Схематичный продольный разрез (placeholder) |
 | `calc/` | (планируется) численные модели — резонанс, цикл |
 
