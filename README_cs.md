@@ -12,6 +12,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
 [![Status: Koncept](https://img.shields.io/badge/Status-koncept-orange.svg)](OPEN-QUESTIONS.cs.md)
+[![Verze: 0.5](https://img.shields.io/badge/verze-0.5-blue.svg)](calc/)
 
 ---
 

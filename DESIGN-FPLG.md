@@ -1,7 +1,7 @@
 # NIC-FPLG — Technical Concept Description
 
 *Two-stroke two-cylinder linear engine with an integrated linear generator.*
-*Status: concept. Values marked (TBD) are waiting on simulation or calculation — see [`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md).*
+*Status: concept. Values marked (TBD) are waiting on simulation or calculation — see [`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md). First 0D dynamics results now exist in [`calc/`](calc/) and are folded into the chapters below.*
 
 ---
 
@@ -111,7 +111,9 @@ the piston**.
 
 1. **Expansion L / Compression R.** Combustion on the left drives the rod right.
    Right piston compresses its charge; both pistons simultaneously pre-compress
-   fresh mixture below them (target ~1:2, partition intake valves closed).
+   fresh mixture below them (target ~2.5:1 — raised from the original ~1:2 so the
+   stock transfer valve gets enough opening force at a light seat spring, see
+   ch.5 / `calc/`; partition intake valves closed).
 2. **Exhaust L.** Left piston uncovers the ring exhaust ports; burnt gas leaves
    around the full circumference into the ring manifold. Upper edge of ports =
    the only fixed timing in the machine (TBD — tuned by milling the edge upward).
@@ -147,6 +149,17 @@ the piston**.
   charge (and by reaction, the piston). Intentionally **no detonation** —
   slow progressive burn, not shock combustion.
 
+**Effective compression depends on amplitude, not just geometry (calc):** the
+geometric ratio is only an upper bound. The *trapped* compression depends on how
+close the piston actually gets to the deck, which is set by the running amplitude
+(generator load, ch.12). [`calc/compression.py`](calc/compression.py) shows that
+running from 17 mm to 23 mm of amplitude (head clearance 8 → 2 mm) lifts the
+effective ratio ~3.2 → ~5.6 and thermal efficiency ~25 % → ~33 %, at the cost of
+peak pressure (~20 → ~29 bar). So efficiency is largely an amplitude-setpoint
+decision: the control should hold the amplitude as close to the head as the
+squish clearance and a peak-pressure limit allow — which is exactly what the
+full-area squish above wants (piston nearly kissing the deck).
+
 ---
 
 ## 5. Piston, Valves, Drop-Shaped Nozzles
@@ -165,15 +178,22 @@ washed by fresh mixture from below, with enormous reserve. Assembly:
 - guides (bushings) pressed from the rear into the piston,
 - **conical (tapered) spring** — progressive rate, compresses fully flat
   (minimum stack height), no sharp natural frequency → immune to surge
-  in a continuously oscillating environment,
+  in a continuously oscillating environment. Seat preload kept **light (~1 N)**:
+  the spring only seats the valve, the gas dynamics do the transfer,
 - standard cap and collets from automotive valvetrain.
 
-**Valve force budget (working figures, TBD):** inertia force on valve ~25 g
+**Valve force budget (working figures):** inertia force on valve ~25 g
 at ~890 m/s² ≈ 22 N; opening pressure force ≈ 20 N per 1 bar differential
 across ⌀16 disc. Forces are of **comparable magnitude** → spring is designed
 against the sum (pressure − spring − inertia) and inertia intentionally
 creates delayed opening (ch. 3). Every gram of valve mass shifts the balance
-by ~0.9 N.
+by ~0.9 N. **Confirmed in [`calc/valves.py`](calc/valves.py):** with the stock
+25 g valve, a ~1 N seat spring and ~2.5:1 pre-compression, opening pressure
+(~32 N) and inertia (~35 N) come out comparable as expected, and the valve
+opens **~36° after BDC** — the exhaust-first/transfer-second timing, for free.
+Pre-compression is the tuning knob (more of it opens the valve earlier), so the
+asymmetric timing is set by the under-piston ratio, not a custom part — no
+special lightweight valve needed.
 
 **Drop-shaped pockets (nozzles):** around each valve in the piston face, a
 drop-shaped recess 2–3 mm deep. At the semicircular (wide) end only ~0.1 mm
@@ -398,7 +418,12 @@ operation; no catalyst. MAP sensors before/after throttle, temperatures.
 **Amplitude control:** dead-centre position is set by energy balance, not
 geometry. Main actuator = **generator load/excitation** (electromagnetic
 brake, ms response). Three independent loops: mixture (slow), excitation
-(fast), advance (corrective).
+(fast), advance (corrective). **Confirmed in [`calc/control.py`](calc/control.py):**
+load and mixture together hold a constant frequency while power is varied —
+load carries the power change, mixture trims the frequency back — and the loops
+stay stable across stepped power demand under realistic per-cycle ignition
+scatter. The single operating point is held by these two loops, not by geometry
+alone (see ch.14).
 
 ---
 
@@ -432,14 +457,29 @@ weigh the assembly → **calculate the volume below the pistons** so that
 resonance falls on the chosen frequency. Operating in resonance = the air spring
 returns reversal energy for free, the generator takes only useful work.
 (Correction: bushing leakage slightly reduces effective stiffness — include it.)
-Specific numbers TBD — first task for `calc/`.
+
+**0D result ([`calc/`](calc/)):** the picture is subtler than "air spring sets
+the frequency". At 1 kg the under-piston air spring alone gives only ~10 Hz; the
+dominant stiffness is the **combustion-side compression spring**, which is
+pressure-dependent, so the limit cycle self-selects **~40 Hz** at the seed
+geometry — above the original ~30 Hz working estimate. Because the stiffness
+rides on combustion pressure, the frequency is *not* fixed by geometry alone: it
+is held constant by the mixture + load control loops (ch.12). To target a given
+frequency, the levers are moving mass (f ∝ 1/√m), pre-compression and bore/stroke
+— all sweepable in `calc/`.
 
 ---
 
 ## 15. Vibration and Mounting
 
 Both pistons move together → the moving mass oscillates with no inherent balance.
-Working estimate: m ≈ 1 kg, stroke 50 mm, 30 Hz → F ≈ 890 N @ 30 Hz (TBD).
+Working estimate: m ≈ 1 kg, stroke 50 mm, 30 Hz → F ≈ 890 N @ 30 Hz. **0D result
+([`calc/`](calc/)):** at the self-selected ~40 Hz the shaker force is closer to
+**~1.4 kN**, and — because at fixed amplitude it tracks the combustion force — it
+does *not* fall with heavier mass, so a lighter assembly is better for vibration
+*and* power. The two-module anti-phase arrangement cancels the net force ~88 %
+(1.4 kN → ~0.16 kN) but leaves a **rocking couple (~165 N·m at 120 mm spacing)**
+that the mounts must carry; stacking the modules coaxially shrinks it.
 
 - stationary use: massive frame + anti-vibration mounts tuned well below the
   operating frequency (standard compressor practice),

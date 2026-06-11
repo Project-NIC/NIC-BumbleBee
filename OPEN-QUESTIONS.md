@@ -12,6 +12,17 @@ applause and more than a blanket dismissal.*
 
 1. **0D/1D cycle model** — pressures, temperatures, work, efficiency at the
    design point. Without this, all power targets (~3 kW mechanical) are estimates.
+   **Update** (`calc/thermo.py`): a 0D closed cycle (real fuel, Wiebe burn,
+   Woschni heat loss, residual fraction) on the limit-cycle kinematics. At
+   φ ≈ 0.8 it gives ~5.8 bar IMEP (the 5 bar seed was about right), ~22 bar peak,
+   ~2400 K peak, **~26 % thermal efficiency (not 38 %)**. Two real findings: the
+   exhaust port opens early (expansion cut short), and the **effective
+   compression ratio is only ~3.5, not the geometric 9** — the piston reverses
+   at ~18 mm instead of reaching the head, so running at higher amplitude is the
+   main efficiency lever (quantified in `calc/compression.py`: 17 → 23 mm lifts
+   the effective ratio ~3.2 → ~5.6 and efficiency ~25 → ~33 %, costing peak
+   pressure ~20 → ~29 bar). Still needs a 1D charge-exchange model and chemistry
+   (peak T is an upper bound) — see A3.
 2. **Exhaust port timing** — upper edge height vs. expansion length vs.
    scavenging quality. Strategy: drill low first, tune by milling edge upward.
    Needs: 1D charge-exchange simulation, then experiment.
@@ -33,14 +44,46 @@ applause and more than a blanket dismissal.*
 7. **System resonant frequency** — f = (1/2π)√(k/m): calculate under-piston
    volume for target frequency; effect of bushing leakage on effective stiffness;
    effect of variable air spring stiffness (non-linearity) on oscillation shape.
-   **First task for `calc/`.**
+   **First task for `calc/` — now under way (see [`calc/`](calc/)).**
+   First result from the 0D model: the under-piston air spring alone is soft
+   (~10 Hz at 1 kg), and stiffness is dominated by the **combustion-side
+   compression spring**, whose rate scales with pressure. The limit cycle
+   therefore self-selects ~40 Hz (above the 30 Hz working estimate) **and the
+   frequency drifts with load/amplitude** (~40–48 Hz across the usable load
+   window — see item below in section G). Open: can one operating frequency
+   really be held, or is "frequency set by the physical system, not control"
+   only approximate? Needs the coupled mech×EM×thermo model and a prototype.
+   **Update:** `calc/freq_hold.py` shows mixture (fuel energy) is a second
+   actuator — load carries the power change, mixture trims the frequency back —
+   and the two together hold ~40 Hz at near-constant peak pressure across
+   ~1.2–1.7 kW. So the frequency *can* be held, just not by geometry alone.
 8. **Moving assembly mass** — real figures (pistons + rod + teeth + end caps +
    spring share); every gram shifts resonance and vibration.
+   **Update** (`calc/tradeoff.py`): mass is the master knob (f ∝ 1/√m), but the
+   trade is not what you'd expect — at fixed amplitude the vibration force tracks
+   the (roughly constant) combustion force, so heavier mass does *not* reduce it
+   (it slightly rises). Lighter mass is better for both power and vibration. The
+   stock 25 g valve transfers from ~0.7 kg (46 Hz) up (with margin at the ~40 Hz
+   operating point), so the valve is not the binding constraint — the remaining
+   cost of higher frequency is vibration, handled by the anti-phase twin.
 9. **In-piston valve force budget** — spring vs. pressure differential vs.
    inertia through the full cycle; magnitude and stability of the inertial
    opening delay (asymmetric timing). Actual valve mass.
+   **Update** (`calc/valves.py`): with a **1 N seat spring** (the spring only
+   seats the valve; the gas dynamics do the work) and ~2.5:1 pre-compression,
+   the **stock 25 g motorcycle exhaust valve transfers** — it opens ~36° after
+   BDC, giving the exhaust-first/transfer-second asymmetric timing for free.
+   Opening pressure (~32 N) and inertia (~35 N) come out comparable, as ch.5
+   claims, and combustion slams it shut (~300 N = backfire check, ch.20).
+   Pre-compression is the tuning knob (more → opens earlier, less delay). No
+   special lightweight valve needed — which was the whole point of using a
+   stock heat-resistant exhaust valve.
 10. **Vibration and mounting** — forces into the frame, anti-vibration mount
     design; when to move to two-module anti-phase arrangement.
+    **Update** (`calc/twin.py`): anti-phase cancels the net shaking *force*
+    strongly (1387 N → 162 N, −88 %, odd-harmonic-dominated cycle), but leaves a
+    large *rocking couple* (~165 N·m at 120 mm spacing) that the mounts must
+    carry. Stacking the modules coaxially (smaller spacing) shrinks it.
 11. **Limit-condition behaviour** — piston-to-head contact: impact energy,
     stress in joint, thread, sleeve flange (single event and repeated).
 
@@ -77,6 +120,11 @@ applause and more than a blanket dismissal.*
 22. **Amplitude regulation by load/excitation** — control algorithm (ms response),
     loop stability across full range; coupled simulation (mechanics × electromagnetics
     × thermodynamics).
+    **Update** (`calc/control.py`): two PI loops (mixture↔power, load↔frequency)
+    hold the setpoints across stepped power demand (1.2→1.55→1.3 kW) with 6 %
+    per-firing ignition scatter — frequency stays at 40 Hz (±~0.6 Hz). The
+    coupled loop is stable in 0D; next step is to add the real generator
+    electromagnetics and the start/misfire transients.
 23. **Start sequence** — energy and time to oscillate in motor mode; minimum
     amplitude for first ignition; duration of zero-field phase (without
     electromagnetic braking).
@@ -111,7 +159,16 @@ applause and more than a blanket dismissal.*
 - rod joint fatigue does not reach 10⁹ cycles within a reasonable cross-section →
   joint architecture must change fundamentally,
 - coupled simulation cannot hold stable amplitude under realistic ignition
-  scatter → control becomes prohibitively complex.
+  scatter → control becomes prohibitively complex,
+- the operating frequency is not fixed by geometry alone — it drifts with
+  load/amplitude because the dominant spring (combustion compression) is
+  pressure-dependent. *Mitigation found* (0D, `calc/freq_hold.py`): mixture +
+  load together hold it constant (~40 Hz, near-constant peak pressure) across
+  ~1.2–1.7 kW, matching the ch.12 loops. *Residual risk:* this leans on the
+  mixture loop having enough authority inside the lean, knock-free, stratified
+  envelope — if that authority is too small, or the coupled loop is unstable
+  under real ignition scatter, constant-frequency operation across the power
+  range fails.
 
 Each of these can be verified **before** spending money on manufacturing.
 That is why this file is in the repo first.

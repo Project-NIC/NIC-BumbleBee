@@ -12,6 +12,16 @@ paušální zamítnutí.*
 
 1. **0D/1D model cyklu** — tlaky, teploty, práce, účinnost v návrhovém bodě.
    Bez něj jsou všechny výkonové cíle (3 kW mech.) jen odhad.
+   **Doplnění** (`calc/thermo.py`): 0D uzavřený cyklus (reálné palivo, Wiebeho
+   hoření, Woschniho ztráty do stěn, zbytkové spaliny) na kinematice mezního
+   cyklu. Při φ ≈ 0,8 dá ~5,8 bar IMEP (seed 5 bar tedy seděl), ~22 bar špičku,
+   ~2400 K, **~26 % tepelné účinnosti (ne 38 %)**. Dva reálné nálezy: výfukový
+   otvor se otevírá brzy (expanze zkrácena) a **efektivní kompresní poměr je jen
+   ~3,5, ne geometrických 9** — píst se obrací na ~18 mm místo dojezdu k hlavě,
+   takže provoz na vyšší amplitudě je hlavní páka účinnosti (kvantifikováno
+   v `calc/compression.py`: 17 → 23 mm zvedne efektivní poměr ~3,2 → ~5,6
+   a účinnost ~25 → ~33 % za cenu špičkového tlaku ~20 → ~29 bar). Zbývá 1D model
+   výměny náplně a chemie (špičková teplota je horní mez) — viz A3.
 2. **Časování výfukových otvorů** — výška horní hrany vs. délka expanze
    vs. kvalita výplachu. Strategie: vrtat níž, ladit frézováním nahoru.
    Potřeba: 1D simulace výměny náplně, poté experiment.
@@ -32,14 +42,45 @@ paušální zamítnutí.*
 7. **Rezonanční frekvence soustavy** — f = (1/2π)√(k/m): dopočítat objem
    pod písty pro cílovou frekvenci; vliv netěsnosti futer na efektivní
    tuhost; vliv proměnné tuhosti vzduchové pružiny (nelinearita) na tvar
-   kmitu. **První úloha pro `calc/`.**
+   kmitu. **První úloha pro `calc/` — rozpracováno (viz [`calc/`](calc/)).**
+   První výsledek 0D modelu: samotná vzduchová pružina pod písty je měkká
+   (~10 Hz při 1 kg) a tuhost dominuje **kompresní pružina spalování**, jejíž
+   rychlost roste s tlakem. Mezní cyklus se proto sám usadí kolem ~40 Hz
+   (nad pracovním odhadem 30 Hz) **a frekvence kolísá se zátěží/amplitudou**
+   (~40–48 Hz napříč použitelným oknem zátěže — viz odrážka v sekci G).
+   Otevřené: lze vůbec udržet jednu provozní frekvenci, nebo je „frekvenci
+   určuje fyzika, ne řízení" jen přibližné? Potřeba spřažený model
+   mechanika×EM×termo a prototyp.
+   **Doplnění:** `calc/freq_hold.py` ukazuje, že směs (energie paliva) je druhý
+   regulátor — zátěž nese změnu výkonu, směs dorovná frekvenci zpět — a dohromady
+   drží ~40 Hz při skoro konstantní špičce tlaku napříč ~1,2–1,7 kW. Frekvenci
+   tedy udržet *lze*, jen ne geometrií samotnou.
 8. **Hmotnost pohyblivé soustavy** — reálná čísla (písty + tyč + zuby +
    koncovky + podíl pružin); každý gram mění rezonanci i vibrace.
+   **Doplnění** (`calc/tradeoff.py`): hmota je hlavní páka (f ∝ 1/√m), ale
+   kompromis je jiný, než by se čekalo — při konstantní amplitudě je vibrační
+   síla daná spalovací silou (~konst.), takže těžší sestava ji *nesnižuje*
+   (mírně roste). Lehčí sestava je lepší pro výkon i vibrace zároveň. Stock 25g
+   ventil přepouští od ~0,7 kg (46 Hz) výš (s rezervou v pracovním bodě ~40 Hz),
+   takže vázající omezení to není — zbývající daň za vyšší frekvenci je vibrace,
+   řešená anti-fázovým dvojmodulem.
 9. **Silový rozpočet pístových ventilů** — pružina vs. tlaková diference
    vs. setrvačnost v celém cyklu; velikost a stabilita setrvačnostního
    zpoždění otevření (asymetrické časování). Hmotnost konkrétních ventilů.
+   **Doplnění** (`calc/valves.py`): s **pružinkou 1 N** (pružina ventil jen
+   posadí, práci dělá dynamika plynu) a předkompresí ~2,5:1 **stock 25g motorkový
+   výfukový ventil přepouští** — otevře se ~36° za úvratí, čili „výfuk první,
+   přepouštění druhé" zadarmo. Otevírací síla (~32 N) a setrvačnost (~35 N) vyjdou
+   srovnatelné, jak tvrdí kap. 5, a spalování ventil bouchne do sedla (~300 N =
+   zpětná pojistka, kap. 20). Předkomprese je ladicí knoflík (víc → otevře dřív,
+   menší zpoždění). Žádný speciální lehký ventil není potřeba — což byl celý smysl
+   použití stock žáruvzdorného výfukového ventilu.
 10. **Vibrace a uložení** — síly do rámu, návrh silentbloků; kdy přejít
     na dvoumodulové protifázové uspořádání.
+    **Doplnění** (`calc/twin.py`): antifáze vyruší čistou budicí *sílu* výrazně
+    (1387 N → 162 N, −88 %, cyklus s převahou lichých harmonických), ale
+    zůstává velký *klopný moment* (~165 N·m při rozteči 120 mm), který musí
+    nést uložení. Koaxiální poskládání modulů (menší rozteč) ho zmenší.
 11. **Chování při poruše** — dolet pístu na hlavu: energie rázu, napětí
     v čepu, závitech, přírubě vložky (jednorázově i opakovaně).
 
@@ -75,6 +116,11 @@ paušální zamítnutí.*
 22. **Regulace amplitudy zátěží/buzením** — algoritmus (odezva ms),
     stabilita smyčky přes celý rozsah; simulace spřažené dynamiky
     (mechanika × elektromagnetika × termodynamika).
+    **Doplnění** (`calc/control.py`): dvě PI smyčky (směs↔výkon, zátěž↔frekvence)
+    udrží žádané hodnoty při skokové změně výkonu (1,2→1,55→1,3 kW) s 6 %
+    rozptylem zápalů — frekvence drží na 40 Hz (±~0,6 Hz). Spřažená smyčka je
+    v 0D stabilní; další krok je přidat reálnou elektromagnetiku generátoru a
+    přechodové děje startu/misfiru.
 23. **Startovací sekvence** — energie a čas rozkmitání v motorickém
     režimu; minimální amplituda pro první zápal; délka fáze s vyrušeným
     polem (bez elektromagnetické brzdy).
@@ -109,7 +155,15 @@ paušální zamítnutí.*
 - únava závitového spoje nevyjde na 10⁹ cyklů v rozumném průřezu →
   nutná jiná architektura spoje,
 - spřažená simulace neudrží stabilní amplitudu při reálných rozptylech
-  zápalů → řízení se zásadně komplikuje.
+  zápalů → řízení se zásadně komplikuje,
+- provozní frekvence není daná geometrií samotnou — kolísá se zátěží/amplitudou,
+  protože dominantní pružina (komprese spalování) závisí na tlaku. *Náprava
+  nalezena* (0D, `calc/freq_hold.py`): směs + zátěž ji dohromady udrží konstantní
+  (~40 Hz, skoro konstantní špička tlaku) napříč ~1,2–1,7 kW, v souladu se
+  smyčkami z kap. 12. *Zbytkové riziko:* závisí to na dostatečné autoritě
+  směsové smyčky uvnitř chudé, nezaklepávající, stratifikované obálky — pokud je
+  ta autorita malá nebo je spřažená smyčka nestabilní při reálném rozptylu
+  zápalů, provoz na konstantní frekvenci přes celý výkonový rozsah padá.
 
 Každá z těchto věcí se dá ověřit **dřív**, než se utratí peníze za výrobu.
 Proto je tenhle soubor v repu na prvním místě.

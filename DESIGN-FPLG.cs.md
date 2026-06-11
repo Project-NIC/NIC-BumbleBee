@@ -1,7 +1,7 @@
 # NIC-FPLG — Technický popis konceptu
 
 *Dvoutaktní dvouválcový lineární motor s integrovaným lineárním generátorem.*
-*Stav: koncept. Hodnoty označené (TBD) čekají na simulaci či výpočet — viz [`OPEN-QUESTIONS.cs.md`](OPEN-QUESTIONS.cs.md).*
+*Stav: koncept. Hodnoty označené (TBD) čekají na simulaci či výpočet — viz [`OPEN-QUESTIONS.cs.md`](OPEN-QUESTIONS.cs.md). První 0D výsledky dynamiky jsou v [`calc/`](calc/) a jsou zapracovány do kapitol níže.*
 
 ---
 
@@ -109,7 +109,9 @@ Dvoutakt bez přepouštěcích kanálů ve stěně válce — přepouštění jd
 
 1. **Expanze L / komprese P.** Výbuch vlevo žene tyč doprava. Pravý píst
    stlačuje náplň nad sebou; oba písty zároveň stlačují čerstvou směs
-   pod sebou (předkomprese cílově ~1:2, sací ventily v přepážkách zavřené).
+   pod sebou (předkomprese cílově ~2,5:1 — zvýšeno z původních ~1:2, aby stock
+   přepouštěcí ventil dostal dost otevírací síly při slabé pružince, viz kap. 5
+   / `calc/`; sací ventily v přepážkách zavřené).
 2. **Výfuk L.** Levý píst odkrývá obvodové výfukové otvory; spaliny odcházejí
    po celém obvodu do prstencového potrubí. Horní hrana otvorů = jediné
    pevné časování stroje (TBD — ladí se frézováním hrany směrem nahoru).
@@ -145,6 +147,17 @@ Dvoutakt bez přepouštěcích kanálů ve stěně válce — přepouštění jd
   náplň (a reakcí píst). Záměrně **bez detonace** — pomalé prohořívání,
   ne rázové hoření.
 
+**Efektivní komprese závisí na amplitudě, ne jen na geometrii (calc):**
+geometrický poměr je jen horní mez. *Trapovaná* komprese závisí na tom, jak
+blízko se píst skutečně dostane k hlavě, což určuje provozní amplituda (zátěž
+generátoru, kap. 12). [`calc/compression.py`](calc/compression.py) ukazuje, že
+provoz od 17 mm do 23 mm amplitudy (rezerva k hlavě 8 → 2 mm) zvedne efektivní
+poměr ~3,2 → ~5,6 a tepelnou účinnost ~25 % → ~33 %, za cenu špičkového tlaku
+(~20 → ~29 bar). Účinnost je tedy hlavně rozhodnutí o amplitudovém setpointu:
+řízení má držet amplitudu tak blízko hlavě, jak dovolí squish vůle a limit
+špičkového tlaku — což je přesně to, co plnoplošný squish výše chce (píst skoro
+líbá dno).
+
 ---
 
 ## 5. Píst, ventily, kapkovité trysky
@@ -163,14 +176,21 @@ omývané čerstvou směsí zespodu, s obrovskou rezervou. Uložení:
 - vodítka (futra) nalisovaná zezadu do pístu,
 - **kuželová (kónická) pružina** — progresivní, stlačitelná na plocho
   (minimální zástavba), bez ostré vlastní frekvence → odolná proti surge
-  v trvale kmitajícím prostředí,
+  v trvale kmitajícím prostředí. Předpětí v sedle **slabé (~1 N)**: pružina
+  ventil jen posadí, práci dělá dynamika plynu,
 - klasická miska + kuželíky z automobilového rozvodu.
 
-**Silový rozpočet ventilu (pracovní čísla, TBD):** setrvačná síla na ventil
+**Silový rozpočet ventilu (pracovní čísla):** setrvačná síla na ventil
 ~25 g při ~890 m/s² ≈ 22 N; otevírací tlaková síla ≈ 20 N na 1 bar diference
 na talíři ⌀16. Síly jsou **stejného řádu** → pružina se navrhuje proti
 součtu (tlak − pružina − setrvačnost) a setrvačnost vědomě tvoří zpožděné
 otevření (kap. 3). Každý gram hmoty ventilu mění bilanci o ~0,9 N.
+**Ověřeno v [`calc/valves.py`](calc/valves.py):** se stock 25g ventilem,
+pružinkou ~1 N a předkompresí ~2,5:1 vyjdou otevírací tlak (~32 N) a setrvačnost
+(~35 N) srovnatelné dle očekávání a ventil se otevře **~36° za úvratí** —
+„výfuk první, přepouštění druhé" zadarmo. Předkomprese je ladicí knoflík (víc →
+otevře dřív), takže asymetrické časování dává poměr předkomprese, ne speciální
+díl — žádný lehký ventil navíc není potřeba.
 
 **Kapkovité komůrky (trysky):** kolem každého ventilu v čele pístu prohlubeň
 tvaru kapky, hloubka 2–3 mm. U půlkruhové (široké) části jen ~0,1 mm mezera
@@ -385,7 +405,11 @@ bez katalyzátoru. Tlakové snímače před/za klapkou, teploty.
 **Regulace amplitudy:** úvrať není dána geometrií, ale energetickou bilancí.
 Hlavní akční člen = **zátěž/buzení generátoru** (elektromagnetická brzda,
 odezva v ms). Tři nezávislé smyčky: směs (pomalá), buzení (rychlá),
-předstih (korekční).
+předstih (korekční). **Ověřeno v [`calc/control.py`](calc/control.py):** zátěž
+a směs dohromady drží konstantní frekvenci, zatímco se mění výkon — zátěž nese
+změnu výkonu, směs dorovná frekvenci zpět — a smyčky zůstanou stabilní při
+skokové změně výkonu i s reálným rozptylem zápalů. Jeden provozní bod drží tyhle
+dvě smyčky, ne geometrie sama (viz kap. 14).
 
 ---
 
@@ -419,14 +443,28 @@ zváží se soustava → **dopočítá se objem pod pístem** tak, aby rezonance
 padla na zvolenou frekvenci. Provoz v rezonanci = vzduchová pružina vrací
 energii obratu zdarma, generátor odebírá jen užitečnou práci.
 (Korekce: netěsnost futer mírně snižuje efektivní tuhost — zahrnout.)
-Konkrétní čísla TBD — první úloha pro `calc/`.
+
+**0D výsledek ([`calc/`](calc/)):** obraz je jemnější než „frekvenci určuje
+vzduchová pružina". Při 1 kg dá samotná vzduchová pružina jen ~10 Hz; dominantní
+tuhost je **kompresní pružina spalování**, která závisí na tlaku, takže mezní
+cyklus se sám usadí na **~40 Hz** při seed geometrii — nad původním odhadem
+~30 Hz. Protože tuhost závisí na tlaku spalování, frekvence *není* daná
+geometrií samotnou: drží ji konstantní regulační smyčky směs + zátěž (kap. 12).
+Páky na cílovou frekvenci jsou hmota (f ∝ 1/√m), předkomprese a vrtání/zdvih —
+vše sweepovatelné v `calc/`.
 
 ---
 
 ## 15. Vibrace a uložení
 
 Oba písty se pohybují souhlasně → pohyblivá hmota kmitá nevyváženě.
-Pracovní odhad: m ≈ 1 kg, zdvih 50 mm, 30 Hz → F ≈ 890 N @ 30 Hz (TBD).
+Pracovní odhad: m ≈ 1 kg, zdvih 50 mm, 30 Hz → F ≈ 890 N @ 30 Hz. **0D výsledek
+([`calc/`](calc/)):** při samočinně zvolených ~40 Hz je budicí síla blíž
+**~1,4 kN**, a protože při konstantní amplitudě sleduje spalovací sílu,
+s těžší hmotou *neklesá* — lehčí sestava je tedy lepší pro vibrace *i* výkon.
+Dvoumodulové protifázové uspořádání vyruší čistou sílu ~88 % (1,4 kN → ~0,16 kN),
+ale zůstane **klopný moment (~165 N·m při rozteči 120 mm)**, který nesou
+silentbloky; koaxiální poskládání modulů ho zmenší.
 
 - stacionární nasazení: masivní rám + silentbloky laděné hluboko pod
   provozní frekvenci (standard kompresorů),

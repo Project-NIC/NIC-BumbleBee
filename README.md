@@ -12,6 +12,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
 [![Status: Concept](https://img.shields.io/badge/Status-concept-orange.svg)](OPEN-QUESTIONS.md)
+[![Version: 0.5](https://img.shields.io/badge/version-0.5-blue.svg)](calc/)
 
 ---
 
@@ -99,8 +100,10 @@ regulate output.
 
 ## Status
 
-Concept stage. Core architecture and design philosophy are defined.
-Simulations, calculations, and a prototype are next.
+**v0.5** — concept stage. Core architecture and design philosophy are defined,
+and a 0D dynamics + thermodynamics model now backs the key numbers (see
+[`calc/`](calc/)). A 1D charge-exchange / scavenging model, CFD and a prototype
+are next.
 
 Contributions welcome — simulation, dynamics, manufacturing, or anyone who
 finds a hole in the reasoning. A specific objection is worth more than applause.
