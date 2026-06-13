@@ -32,12 +32,15 @@ applause and more than a blanket dismissal.*
 4. **Internal EGR** — what fraction of retained exhaust gas is optimum; confirm
    that flash evaporation on hot inert gas does not lead to autoignition
    (temperature boundary).
+   **Update** (`calc/chem.py` Cantera; `calc/knock.py`): NOx rides on peak temperature, not leanness — equilibrium NO peaks slightly lean; only lower temperature via internal EGR cuts it (~20 % → NO ~10,700→~4,900 ppm; ~30 % → ~1,700 ppm). Knock: gasoline/LPG have margin, heavy fuel (~70 ON) knocks = the real ceiling on work-per-cycle. Both hinge on how the geometry holds temperature/stratification (A3).
 5. **Ejector effect in Y junction** — branch lengths vs. pulse phase (speed of
    sound in exhaust gas ~500–600 m/s). Does sub-pressure assist scavenging,
    or is the effect negligible?
+   **Update** (`calc/exhaust_acoustics.py`): at 40 Hz the wavelength is ~17 m and a quarter-wave ~4.2 m → a tuned exhaust is impossible in a compact engine. The ejector is at most a mild direct pulse effect, not a resonance — confirming the open-exhaust choice. Whether it helps at all = 1D/CFD.
 6. **Heat transfer** — balance: how much into aluminium, how much out with
    exhaust, how much does the intake mixture heat up passing through the
    generator (loss of volumetric efficiency vs. cooling gain).
+   **Update** (`calc/heat.py`): of the fuel ~26 % to work, ~12 %+ to the walls (→ fins ~1–2 kW; less than the 2–4 kW estimate), ~62 % out with the hot exhaust (~1700 K) — the fins have a more modest job.
 
 ## B. Dynamics and Resonance
 
@@ -57,6 +60,7 @@ applause and more than a blanket dismissal.*
    actuator — load carries the power change, mixture trims the frequency back —
    and the two together hold ~40 Hz at near-constant peak pressure across
    ~1.2–1.7 kW. So the frequency *can* be held, just not by geometry alone.
+   **50 Hz target** (`calc/freq50.py`): the frequency knob is the stroke (shorter → higher f); compression alone only ~47 Hz, pre-compression does not move it. Either a shorter stroke (any fuel) or stroke+compression (gasoline/LPG only). Cost: ~1.8 billion cycles/10,000 h vs 1.4 billion at 40 Hz.
 8. **Moving assembly mass** — real figures (pistons + rod + teeth + end caps +
    spring share); every gram shifts resonance and vibration.
    **Update** (`calc/tradeoff.py`): mass is the master knob (f ∝ 1/√m), but the
@@ -86,6 +90,7 @@ applause and more than a blanket dismissal.*
     carry. Stacking the modules coaxially (smaller spacing) shrinks it.
 11. **Limit-condition behaviour** — piston-to-head contact: impact energy,
     stress in joint, thread, sleeve flange (single event and repeated).
+    **Update** (`calc/fatigue.py`): at ~1.7 kN the rod stress is ~8 MPa vs a ~230 MPa endurance limit — 50–100× margin. The bulk is over-built; the 10⁹-cycle fight is in local details (thread finish, fretting, creep) → FEA + pulsator.
 
 ## C. Generator and Magnetics
 
@@ -93,6 +98,7 @@ applause and more than a blanket dismissal.*
     permanent magnets (not through them against polarisation). Demagnetisation
     analysis at temperature = service life condition. Magnet selection
     (NdFeB SH/UH vs. SmCo).
+    **Update** (`calc/magnetics.py`): a first-cut reluctance estimate gives a ~0.9 T air gap, ~185 turns for 110 V peak and a **demagnetisation margin ~8×** against the hot coercivity — the cancellable field looks geometrically feasible, *if* the flux is routed around the magnets. FEMM/Maxwell still decides.
 13. **PM/field winding ratio** — 50/50 working hypothesis; steady field
     winding losses (I²R) vs. field control range. Optimisation.
 14. **Air gap** — concentricity tolerance through bushings; sensitivity of

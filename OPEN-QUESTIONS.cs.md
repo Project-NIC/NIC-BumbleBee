@@ -30,12 +30,15 @@ paušální zamítnutí.*
    emisní i účinnostní předpoklad celého konceptu.
 4. **Vnitřní EGR** — kolik zbytkových spalin je optimum; ověřit, že odpar
    na horkých inertních spalinách nevede k samovznícení (hranice teplot).
+   **Doplnění** (`calc/chem.py` Cantera; `calc/knock.py`): NOx visí na špičkové teplotě, ne na chudosti — rovnovážné NO vrcholí mírně chudé; srazí ho nižší teplota přes vnitřní EGR (~20 % → NO ~10 700→~4 900 ppm; ~30 % → ~1 700 ppm). Klepání: benzín/LPG mají rezervu, heavy fuel (~70 ON) klepe = reálný strop výkonu na cyklus. Obojí závisí na tom, jak geometrie drží teplotu/stratifikaci (A3).
 5. **Ejektorový efekt v Y** — délky větví vs. fáze pulzů (rychlost zvuku
    ve spalinách ~500–600 m/s). Funguje podtlaková podpora výplachu,
    nebo je to zanedbatelné?
+   **Doplnění** (`calc/exhaust_acoustics.py`): při 40 Hz je vlnová délka ~17 m a laděná čtvrtvlna ~4,2 m → laděný výfuk je v kompaktním motoru nemožný. Ejektor je nanejvýš mírný přímý pulzní efekt, ne rezonance — potvrzuje volbu otevřeného výfuku. Jestli vůbec pomáhá, řekne 1D/CFD.
 6. **Přestup tepla** — bilance: kolik do hliníku, kolik spalinami ven,
    ohřátí nasávané směsi průchodem přes generátor (ztráta plnění vs.
    zisk chlazení).
+   **Doplnění** (`calc/heat.py`): z paliva ~26 % do práce, ~12 %+ do stěn (→ žebra ~1–2 kW; míň než odhad 2–4 kW), ~62 % horkým výfukem (~1700 K) ven — žebra mají skromnější úkol.
 
 ## B. Dynamika a rezonance
 
@@ -55,6 +58,7 @@ paušální zamítnutí.*
    regulátor — zátěž nese změnu výkonu, směs dorovná frekvenci zpět — a dohromady
    drží ~40 Hz při skoro konstantní špičce tlaku napříč ~1,2–1,7 kW. Frekvenci
    tedy udržet *lze*, jen ne geometrií samotnou.
+   **Cíl 50 Hz** (`calc/freq50.py`): knoflík na frekvenci je zdvih (kratší → vyšší f); komprese sama jen ~47 Hz, předkomprese nehne. Buď kratší zdvih (jakékoliv palivo), nebo zdvih+komprese (jen benzín/LPG). Daň: ~1,8 mld cyklů/10 000 h vs 1,4 mld při 40 Hz.
 8. **Hmotnost pohyblivé soustavy** — reálná čísla (písty + tyč + zuby +
    koncovky + podíl pružin); každý gram mění rezonanci i vibrace.
    **Doplnění** (`calc/tradeoff.py`): hmota je hlavní páka (f ∝ 1/√m), ale
@@ -83,6 +87,7 @@ paušální zamítnutí.*
     nést uložení. Koaxiální poskládání modulů (menší rozteč) ho zmenší.
 11. **Chování při poruše** — dolet pístu na hlavu: energie rázu, napětí
     v čepu, závitech, přírubě vložky (jednorázově i opakovaně).
+    **Doplnění** (`calc/fatigue.py`): při ~1,7 kN je napětí v tyči ~8 MPa proti mezi únavy ~230 MPa — rezerva 50–100×. Tělo předimenzované; 10⁹ cyklů se vyhraje v lokálních detailech (povrch závitu, freting, creep) → FEA + pulzátor.
 
 ## C. Generátor a magnetika
 
@@ -90,6 +95,7 @@ paušální zamítnutí.*
     permanentních magnetů (ne skrz, proti polarizaci). Demagnetizační
     analýza za tepla = podmínka životnosti. Volba magnetů (NdFeB SH/UH
     vs. SmCo).
+    **Doplnění** (`calc/magnetics.py`): první analytický reluktanční odhad dává vzduchovou mezeru ~0,9 T, ~185 závitů na 110 V špičku a **demagnetizační rezervu ~8×** proti horké koercitivitě — vyrušitelné pole vypadá geometricky proveditelné, *pokud* se tok vede kolem magnetů. Verdikt ale až FEMM/Maxwell.
 13. **Poměr buzení PM/elektromagnet** — 50/50 pracovní hypotéza; trvalé
     budicí ztráty (I²R) vs. rozsah řiditelnosti pole. Optimalizace.
 14. **Vzduchová mezera** — tolerance souososti přes futra; citlivost
